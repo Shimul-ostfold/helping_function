@@ -4,7 +4,7 @@
 import tensorflow as tf
 
 # Create a function to import an image and resize it to be able to be used with our model
-def load_and_prep_image(filename, img_shape=224, scale=True):
+def load_and_prep_image(filename, img_shape=256, scale=True):
   """
   Reads in an image from filename, turns it into a tensor and reshapes into
   (224, 224, 3).
@@ -109,28 +109,38 @@ def make_confusion_matrix(y_true, y_pred, classes=None, figsize=(10, 10), text_s
   if savefig:
     fig.savefig("confusion_matrix.png")
   
+
 # Make a function to predict on images and plot them (works with multi-class)
-def pred_and_plot(model, filename, class_names):
-  """
-  Imports an image located at filename, makes a prediction on it with
-  a trained model and plots the image with the predicted class as the title.
-  """
-  # Import the target image and preprocess it
-  img = load_and_prep_image(filename)
+def plot_performance(hist):
+    hist_ = hist.history
+    epochs = hist.epoch
+    
+    plt.plot(epochs, hist_['accuracy'], label='Training Accuracy')
+    plt.plot(epochs, hist_['val_accuracy'], label='Validation Accuracy')
+    plt.title('Training and validation accuracy')
+    plt.legend()
 
-  # Make a prediction
-  pred = model.predict(tf.expand_dims(img, axis=0))
-
-  # Get the predicted class
-  if len(pred[0]) > 1: # check for multi-class
-    pred_class = class_names[pred.argmax()] # if more than one output, take the max
-  else:
-    pred_class = class_names[int(tf.round(pred)[0][0])] # if only one output, round
-
-  # Plot the image and predicted class
-  plt.imshow(img)
-  plt.title(f"Prediction: {pred_class}")
-  plt.axis(False);
+    plt.figure()
+    plt.plot(epochs, hist_['loss'], label='Training loss')
+    plt.plot(epochs, hist_['val_loss'], label='Validation loss')
+    plt.title('Training and validation loss')
+    plt.legend()
+    
+    recall = np.array(hist_['recall'])
+    precision = np.array(hist_['precision'])
+    val_recall = np.array(hist_['val_recall'])
+    val_precision = np.array(hist_['val_precision'])
+    plt.figure()
+    plt.plot(epochs, 
+            2*((recall * precision)/(recall + precision)), 
+            label='Training f1')
+    plt.plot(epochs, 
+            2*((val_recall * val_precision)/(val_recall + val_precision)), 
+            label='Validation f1')
+    plt.title('Training and validation F1-Score')
+    plt.legend()
+    
+    plt.show()
   
 import datetime
 
@@ -155,35 +165,36 @@ def create_tensorboard_callback(dir_name, experiment_name):
 # Plot the validation and training data separately
 import matplotlib.pyplot as plt
 
-def plot_loss_curves(history):
-  """
-  Returns separate loss curves for training and validation metrics.
+def plot_performance(hist):
+    hist_ = hist.history
+    epochs = hist.epoch
+    
+    plt.plot(epochs, hist_['accuracy'], label='Training Accuracy')
+    plt.plot(epochs, hist_['val_accuracy'], label='Validation Accuracy')
+    plt.title('Training and validation accuracy')
+    plt.legend()
+    
+    plt.figure()
+    plt.plot(epochs, hist_['loss'], label='Training loss')
+    plt.plot(epochs, hist_['val_loss'], label='Validation loss')
+    plt.title('Training and validation loss')
+    plt.legend()
 
-  Args:
-    history: TensorFlow model History object (see: https://www.tensorflow.org/api_docs/python/tf/keras/callbacks/History)
-  """ 
-  loss = history.history['loss']
-  val_loss = history.history['val_loss']
-
-  accuracy = history.history['accuracy']
-  val_accuracy = history.history['val_accuracy']
-
-  epochs = range(len(history.history['loss']))
-
-  # Plot loss
-  plt.plot(epochs, loss, label='training_loss')
-  plt.plot(epochs, val_loss, label='val_loss')
-  plt.title('Loss')
-  plt.xlabel('Epochs')
-  plt.legend()
-
-  # Plot accuracy
-  plt.figure()
-  plt.plot(epochs, accuracy, label='training_accuracy')
-  plt.plot(epochs, val_accuracy, label='val_accuracy')
-  plt.title('Accuracy')
-  plt.xlabel('Epochs')
-  plt.legend();
+    recall = np.array(hist_['recall'])
+    precision = np.array(hist_['precision'])
+    val_recall = np.array(hist_['val_recall'])
+    val_precision = np.array(hist_['val_precision'])
+    plt.figure()
+    plt.plot(epochs, 
+             2*((recall * precision)/(recall + precision)), 
+             label='Training f1')
+    plt.plot(epochs, 
+             2*((val_recall * val_precision)/(val_recall + val_precision)), 
+             label='Validation f1')
+    plt.title('Training and validation F1-Score')
+    plt.legend()
+    
+    plt.show()
 
 def compare_historys(original_history, new_history, initial_epochs=5):
     """
